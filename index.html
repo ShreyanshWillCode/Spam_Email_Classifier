@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Email Classifier</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Spam Email Classifier</h1>
+            <p>Check if your email is spam or not in seconds!</p>
+        </header>
+        
+        <div class="input-section">
+            <textarea id="email-text" placeholder="Paste your email here..." maxlength="5000"></textarea>
+            <p id="char-count">0/5000 characters</p>
+            <button onclick="checkSpam()">Check for Spam 🔍</button>
+        </div>
+        
+        <div id="result" class="hidden"></div>
+        
+        <footer>
+            <p>🔒 Powered by AI | Your Privacy Matters</p>
+        </footer>
+    </div>
+    
+    <script>
+        document.getElementById("email-text").addEventListener("input", function() {
+            document.getElementById("char-count").innerText = this.value.length + "/5000 characters";
+        });
+    
+        function checkSpam() {
+            let emailText = document.getElementById("email-text").value.trim();
+            let resultBox = document.getElementById("result");
+            let button = document.querySelector("button");
+
+            if (!emailText) {
+                alert("Please enter an email!");
+                return;
+            }
+
+            // Disable button and show loading message
+            button.disabled = true;
+            button.innerText = "Checking...";
+            resultBox.classList.add("hidden");
+
+            fetch("http://127.0.0.1:5000/predict", { // Updated to correct endpoint
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text: emailText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === "spam") {
+                    resultBox.className = "result spam";
+                    resultBox.innerHTML = "🚨 This email is likely SPAM!";
+                } else {
+                    resultBox.className = "result not-spam";
+                    resultBox.innerHTML = "✅ This email is NOT spam.";
+                }
+                resultBox.classList.remove("hidden");
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error connecting to the server. Please try again later.");
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.innerText = "Check for Spam 🔍";
+            });
+        }
+    </script>
+</body>
+</html>
