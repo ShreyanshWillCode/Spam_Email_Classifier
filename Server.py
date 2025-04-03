@@ -1,6 +1,12 @@
 from flask import Flask, request, jsonify
 import joblib
 from flask_cors import CORS  # Import CORS
+import sys
+
+if sys.platform == "win32":
+    import win32api  # pywin32 module
+else:
+    print("Running on a non-Windows environment, skipping pywin32.")
 
 # Load the trained model
 model = joblib.load('spam_classifier_model.pkl')
