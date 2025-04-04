@@ -1,78 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spam Email Classifier</title>
-    <link rel="stylesheet" href="./styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spam Email Classifier</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Spam Email Classifier</h1>
-            <p>Check if your email is spam or not in seconds!</p>
-        </header>
-        
-        <div class="input-section">
-            <textarea id="email-text" placeholder="Paste your email here..." maxlength="5000"></textarea>
-            <p id="char-count">0/5000 characters</p>
-            <button onclick="checkSpam()">Check for Spam 🔍</button>
-        </div>
-        
-        <div id="result" class="hidden"></div>
-        
-        <footer>
-            <p>🔒 Powered by AI | Your Privacy Matters</p>
-        </footer>
+  <div class="container">
+    <header>
+      <h1>Spam Email Classifier</h1>
+      <p>Check if your email is spam or not in seconds!</p>
+    </header>
+
+    <div class="input-section">
+      <textarea
+        id="email-text"
+        placeholder="Paste your email here..."
+        maxlength="5000"
+        aria-label="Email content input"
+      ></textarea>
+      <p id="char-count">0/5000 characters</p>
+      <button id="check-btn">Check for Spam 🔍</button>
     </div>
-    
-    <script>
-        document.getElementById("email-text").addEventListener("input", function() {
-            document.getElementById("char-count").innerText = this.value.length + "/5000 characters";
+
+    <div id="result" class="hidden" role="alert"></div>
+
+    <footer>
+      <p>🔒 Powered by AI | Your Privacy Matters</p>
+    </footer>
+  </div>
+
+  <script>
+    const textarea = document.getElementById("email-text");
+    const resultBox = document.getElementById("result");
+    const button = document.getElementById("check-btn");
+    const charCount = document.getElementById("char-count");
+
+    textarea.addEventListener("input", function () {
+      charCount.innerText = `${this.value.length}/5000 characters`;
+    });
+
+    // Enable pressing Enter+Ctrl to trigger check
+    textarea.addEventListener("keydown", function (e) {
+      if (e.ctrlKey && e.key === "Enter") {
+        checkSpam();
+      }
+    });
+
+    button.addEventListener("click", checkSpam);
+
+    function checkSpam() {
+      const emailText = textarea.value.trim();
+      if (!emailText) {
+        alert("Please enter an email!");
+        return;
+      }
+
+      // Disable button and show loading
+      button.disabled = true;
+      button.innerText = "Checking...";
+      resultBox.classList.add("hidden");
+
+      fetch("https://spam-email-classifier-g4bh.onrender.com/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: emailText }),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Bad response from server.");
+          return response.json();
+        })
+        .then((data) => {
+          if (data.result === "spam") {
+            resultBox.className = "result spam";
+            resultBox.innerHTML = "🚨 This email is likely SPAM!";
+          } else if (data.result === "not-spam") {
+            resultBox.className = "result not-spam";
+            resultBox.innerHTML = "✅ This email is NOT spam.";
+          } else {
+            resultBox.className = "result unknown";
+            resultBox.innerHTML = "⚠️ Unexpected response.";
+          }
+          resultBox.classList.remove("hidden");
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error connecting to the server. Please try again later.");
+        })
+        .finally(() => {
+          button.disabled = false;
+          button.innerText = "Check for Spam 🔍";
         });
-    
-        function checkSpam() {
-            let emailText = document.getElementById("email-text").value.trim();
-            let resultBox = document.getElementById("result");
-            let button = document.querySelector("button");
-
-            if (!emailText) {
-                alert("Please enter an email!");
-                return;
-            }
-
-            // Disable button and show loading message
-            button.disabled = true;
-            button.innerText = "Checking...";
-            resultBox.classList.add("hidden");
-
-            fetch("https://spam-email-classifier-g4bh.onrender.com", { // Updated to correct endpoint
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ text: emailText })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.result === "spam") {
-                    resultBox.className = "result spam";
-                    resultBox.innerHTML = "🚨 This email is likely SPAM!";
-                } else {
-                    resultBox.className = "result not-spam";
-                    resultBox.innerHTML = "✅ This email is NOT spam.";
-                }
-                resultBox.classList.remove("hidden");
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("Error connecting to the server. Please try again later.");
-            })
-            .finally(() => {
-                button.disabled = false;
-                button.innerText = "Check for Spam 🔍";
-            });
-        }
-    </script>
+    }
+  </script>
 </body>
 </html>
